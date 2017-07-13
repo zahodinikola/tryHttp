@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="html">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Http service</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    </head>
+    <body>
+        <div ng-app="tryHttp" ng-controller="resultCtrl">
+            
+			<div class="container">
+			
+				<div id="urlFieldSet">
+					<div id="entry0">
+						<select ng-model="method[0]">
+							<option value="GET">Get</option>
+							<option value="POST">Post</option>
+						</select>
+						<input type="text" ng-model="url[0]" ng-pattern="/^[a-z0-9.-]+$/"></input>
+						<input class="btn" type="button" ng-click="getData(0)" value="Get Data"></input>
+						<input class="btn" type="button" ng-click="appendField()" value="+"></input>
+                        <input class="btn" type="button" ng-click="deleteField()" value="-"></input>
+						{{data[0]}}
+						<br />
+					</div>
+				</div>
+			</div>
+			<h3>{{index}} - {{method}}: {{url}}</h3>
+        </div>
+        <script>
+            var app = angular.module("tryHttp", []);
+
+			app.factory('getDataService', function($http, $q) {
+				return {
+					getData: function(method, url) {
+						var deferred = $q.defer();
+						$http({method: method, url: url})
+							.then(function success(response) {
+									deferred.resolve(response);
+								},function error(reason) {
+									deferred.reject(reason);
+								});
+						return deferred.promise;
+					}
+				}
+			});
+            
+			app.controller("resultCtrl", function($scope, getDataService, $compile) {
+                $scope.data = ["raw"];
+				$scope.method = [];
+				$scope.url = [];
+				$scope.index = 0;
+								
+				$scope.getData = function (index) {
+
+					var promisObj = getDataService.getData(($scope.method[index]), ($scope.url[index]));
+					promisObj.then(function(response) {
+						$scope.data[index] = response.data;
+						})
+				};
+				
+				function indexCounter() {
+				
+					var counter = 0;
+					
+					return function(option) {
+						return counter += option;
+						};
+					};
+				
+				var indexChange = indexCounter();
+			
+				$scope.appendField = function() {
+					
+					$scope.index = indexChange(1);
+					console.log($scope.index);
+					
+					var newEntry = $compile(angular.element(
+						'<div id="entry' + $scope.index + '">\
+							<select ng-model="method[' + $scope.index + ']">\
+								<option value="GET">Get</option>\
+								<option value="POST">Post</option>\
+							</select>\
+							<input type="text" ng-model="url[' + $scope.index + ']" ng-pattern="/^[a-z0-9.-]+$/"></input>\
+							<input class="btn" type="button" ng-click="getData(' + $scope.index + ')" value="Get Data"></input>\
+							<input class="btn" type="button" ng-click="appendField()" value="+"></input>\
+                            <input class="btn" type="button" ng-click="deleteField()" value="-"></input>\
+							{{data[' + $scope.index + ']}}\
+							<br />\
+						</div>'))($scope);
+						
+					var urlFieldSet = angular.element(document.getElementById('urlFieldSet'));
+					urlFieldSet.append(newEntry);
+					
+					};
+
+				$scope.deleteField = function() {
+
+					var target = angular.element(document.querySelector("#entry" + $scope.index));
+					target.remove();
+
+					delete $scope.method[$scope.index];
+					delete $scope.url[$scope.index];
+					
+					$scope.index = indexChange(-1);
+					
+					console.log($scope.index);
+
+				}			
+					
+				
+			});
+            
+        </script>
+
+    </body>
+</html>
